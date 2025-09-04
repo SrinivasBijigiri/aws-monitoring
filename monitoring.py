@@ -238,6 +238,7 @@ def monitor_ec2():
             })
     print("")
 
+
 def print_issue_summary():
     print("\n--- ⚠ Issues Summary ---\n")
     if not issues:
@@ -263,6 +264,7 @@ def print_issue_summary():
 
     print(line + "\n")
 
+
 import smtplib
 from email.mime.text import MIMEText
 
@@ -279,6 +281,8 @@ def send_email(subject, body, to_email):
         server.login(from_email, password)
         server.send_message(msg)
 
+
+# --- New FOTA API Check ---
 import requests
 
 def check_fota_time_api():
@@ -329,7 +333,7 @@ if __name__ == "__main__":
     # Run monitoring
     monitor_beanstalk()
     monitor_ec2()
-    check_fota_time_api()
+    check_fota_time_api()   # ✅ Added here
     print_issue_summary()
 
     # Restore stdout
