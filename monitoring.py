@@ -279,6 +279,42 @@ def send_email(subject, body, to_email):
         server.login(from_email, password)
         server.send_message(msg)
 
+import requests
+
+def check_fota_time_api():
+    """Check if FOTA time API returns a valid epoch timestamp"""
+    print("\n--- FOTA Time API Check ---\n")
+    try:
+        response = requests.get("https://fota.kazam.in/time", timeout=10)
+        if response.status_code == 200:
+            data = response.text.strip()
+            if data.isdigit():
+                print(f"✅ API is working. Response: {data}")
+            else:
+                print(f"❌ Invalid response: {data}")
+                issues.append({
+                    "Type": "FOTA API",
+                    "Name": "fota.kazam.in/time",
+                    "Metric": "Response",
+                    "Status": "Invalid data"
+                })
+        else:
+            print(f"❌ API returned status {response.status_code}")
+            issues.append({
+                "Type": "FOTA API",
+                "Name": "fota.kazam.in/time",
+                "Metric": "HTTP",
+                "Status": f"Error {response.status_code}"
+            })
+    except Exception as e:
+        print(f"❌ Error calling API: {e}")
+        issues.append({
+            "Type": "FOTA API",
+            "Name": "fota.kazam.in/time",
+            "Metric": "Exception",
+            "Status": str(e)
+        })
+
 
 # --- Main ---
 if __name__ == "__main__":
@@ -293,6 +329,7 @@ if __name__ == "__main__":
     # Run monitoring
     monitor_beanstalk()
     monitor_ec2()
+    check_fota_time_api()
     print_issue_summary()
 
     # Restore stdout
