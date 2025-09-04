@@ -1,0 +1,34 @@
+name: AWS Monitor
+
+on:
+  schedule:
+    - cron: "30 4 * * *"   # 10:00 AM IST
+    - cron: "30 9 * * *"   # 3:00 PM IST
+    - cron: "30 12 * * *"  # 6:00 PM IST
+    - cron: "30 17 * * *"  # 11:00 PM IST
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run monitoring
+        run: python monitoring.py
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ap-south-1
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
