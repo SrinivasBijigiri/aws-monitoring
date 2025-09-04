@@ -2,7 +2,7 @@ name: AWS Monitor
 
 on:
   schedule:
-    - cron: "*/2 * * * *"  # every 5 minutes UTC
+    - cron: "*/5 * * * *"  # every 5 minutes UTC
   workflow_dispatch:
 
 jobs:
