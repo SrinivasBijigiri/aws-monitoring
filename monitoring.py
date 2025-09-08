@@ -254,21 +254,25 @@ def check_fota_time_api():
 
 # --- Print Issues Summary ---
 def print_issue_summary():
-    print("\n--- ⚠ Issues Summary ---\n")
-    if not issues:
+    # Filter out MQTT Nodes
+    filtered_issues = [i for i in issues if i['Type'] != "MQTT Node"]
+
+    if not filtered_issues:
         print("✅ No issues detected. All systems healthy.\n")
         return
 
     col_widths = {"Type": 20, "Name": 22, "Metric": 18, "Status": 28}
     header = f"| {'Type':<{col_widths['Type']}} | {'Name/Instance ID':<{col_widths['Name']}} | {'Metric':<{col_widths['Metric']}} | {'Status/Value':<{col_widths['Status']}} |"
     line = "+" + "+".join(["-" * (w + 2) for w in col_widths.values()]) + "+"
+
     print(line)
     print(header)
     print(line)
-    for issue in issues:
+    for issue in filtered_issues:
         row = f"| {issue['Type']:<{col_widths['Type']}} | {issue['Name']:<{col_widths['Name']}} | {issue['Metric']:<{col_widths['Metric']}} | {issue['Status']:<{col_widths['Status']}} |"
         print(row)
     print(line + "\n")
+
 
 # --- Send Email ---
 def send_email(subject, body, to_email):
