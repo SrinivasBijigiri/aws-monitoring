@@ -257,6 +257,8 @@ def print_issue_summary():
     # Filter out MQTT Nodes
     filtered_issues = [i for i in issues if i['Type'] != "MQTT Node"]
 
+    print("\n--- ⚠ Issues Summary ---\n")
+
     if not filtered_issues:
         print("✅ No issues detected. All systems healthy.\n")
         return
