@@ -70,13 +70,13 @@ def check_ec2_cpu(instance_id):
         print(f"⚠ Error fetching CPU for {instance_id}: {e}")
         return None
 
-def check_storage(instance_id):
-    """Check /data storage usage (%) via SSM with retry"""
+def check_storage(instance_id, path="/data"):
+    """Check storage usage (%) via SSM for a given path"""
     try:
         response = ssm.send_command(
             InstanceIds=[instance_id],
             DocumentName="AWS-RunShellScript",
-            Parameters={"commands": ["df -h /data | awk 'NR==2 {print $5, $3, $2}'"]},
+            Parameters={"commands": [f"df -h {path} | awk 'NR==2 {{print $5, $3, $2}}'"]},
         )
         command_id = response["Command"]["CommandId"]
         time.sleep(2)
@@ -97,7 +97,7 @@ def check_storage(instance_id):
                 break
         return None
     except Exception as e:
-        print(f"⚠ Error checking storage on {instance_id}: {e}")
+        print(f"⚠ Error checking storage on {instance_id} ({path}): {e}")
         return None
 
 def get_instance_name(instance_id):
@@ -145,7 +145,7 @@ def monitor_beanstalk():
 def monitor_ec2():
     print("\n--- MongoDB EC2 Monitoring ---\n")
 
-    def check_instances(instances, inst_type):
+    def check_instances(instances, inst_type, storage_path="/data"):
         for inst in instances:
             name = get_instance_name(inst)
             cpu = check_ec2_cpu(inst)
@@ -158,8 +158,8 @@ def monitor_ec2():
             else:
                 print(f"Instance: {name}\n  ✅ CPU OK: {cpu:.2f}% (max in last 12hrs)")
 
-            # Always check storage for all instances
-            storage = check_storage(inst)
+            # Storage check
+            storage = check_storage(inst, path=storage_path)
             if storage:
                 percent, used, total = storage
                 if percent > 84:
@@ -173,14 +173,11 @@ def monitor_ec2():
             print("")
 
     print("### Logger Mongo Instances (CPU + Storage) ###")
-    check_instances(logger_mongo_instances, "EC2 Logger")
+    check_instances(logger_mongo_instances, "EC2 Logger", storage_path="/")  # root for logger
 
     print("### Main Mongo Instances (CPU + Storage) ###")
-    check_instances(main_mongo_instances, "EC2 Main Mongo")
-
+    check_instances(main_mongo_instances, "EC2 Main Mongo", storage_path="/data")  # /data for main
     print("")
-
-    
 
 # --- MQTT Nodes Monitoring via Selenium ---
 MQTT_USERNAME = "devops"
