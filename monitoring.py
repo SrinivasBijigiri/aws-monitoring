@@ -145,7 +145,7 @@ def monitor_beanstalk():
 def monitor_ec2():
     print("\n--- MongoDB EC2 Monitoring ---\n")
 
-    def check_instances(instances, inst_type, cpu_only=False):
+    def check_instances(instances, inst_type):
         for inst in instances:
             name = get_instance_name(inst)
             cpu = check_ec2_cpu(inst)
@@ -158,18 +158,26 @@ def monitor_ec2():
             else:
                 print(f"Instance: {name}\n  ✅ CPU OK: {cpu:.2f}% (max in last 12hrs)")
 
-            if not cpu_only:
-                storage = check_storage(inst)
-                if storage:
-                    percent, used, total = storage
-                    if percent > 84:
-                        print(f"  ❌ Storage High: {percent:.2f}% used ({used}/{total})")
-                        issues.append({"Type": inst_type, "Name": name, "Metric": "Storage", "Status": f"High ({percent:.2f}% used {used}/{total})"})
-                    else:
-                        print(f"  ✅ Storage OK: {percent:.2f}% used ({used}/{total})")
+            # Always check storage for all instances
+            storage = check_storage(inst)
+            if storage:
+                percent, used, total = storage
+                if percent > 84:
+                    print(f"  ❌ Storage High: {percent:.2f}% used ({used}/{total})")
+                    issues.append({"Type": inst_type, "Name": name, "Metric": "Storage", "Status": f"High ({percent:.2f}% used {used}/{total})"})
                 else:
-                    print(f"  ⚠ Storage check failed")
-                    issues.append({"Type": inst_type, "Name": name, "Metric": "Storage", "Status": "Check failed"})
+                    print(f"  ✅ Storage OK: {percent:.2f}% used ({used}/{total})")
+            else:
+                print(f"  ⚠ Storage check failed")
+                issues.append({"Type": inst_type, "Name": name, "Metric": "Storage", "Status": "Check failed"})
+            print("")
+
+    print("### Logger Mongo Instances (CPU + Storage) ###")
+    check_instances(logger_mongo_instances, "EC2 Logger")
+
+    print("### Main Mongo Instances (CPU + Storage) ###")
+    check_instances(main_mongo_instances, "EC2 Main Mongo")
+
             print("")
 
     print("### Logger Mongo Instances (CPU only) ###")
