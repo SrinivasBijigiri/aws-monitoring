@@ -148,28 +148,30 @@ def monitor_ec2():
     print("\n--- MongoDB EC2 Monitoring ---\n")
 
     print("### Logger Mongo Instances (CPU only) ###")
-    for inst in logger_mongo_instances:
-        name = get_instance_name(inst)
-        cpu = check_ec2_cpu(inst)
-        if cpu is None:
-            print(f"Instance: {name} - ⚠ No CPU data")
-            issues.append({"Type": "EC2 Logger", "Name": name, "Metric": "CPU", "Status": "No data"})
-        elif cpu > 65:
-            print(f"Instance: {name}\n  ❌ CPU High: {cpu:.2f}% (max in last 12hrs)")
-            issues.append({"Type": "EC2 Logger", "Name": name, "Metric": "CPU", "Status": f"High ({cpu:.2f}%)"})
+for inst in logger_mongo_instances:
+    name = get_instance_name(inst)
+    cpu = check_ec2_cpu(inst)
+    if cpu is None:
+        print(f"Instance: {name} - ⚠ No CPU data")
+        issues.append({"Type": "EC2 Logger", "Name": name, "Metric": "CPU", "Status": "No data"})
+    elif cpu > 65:
+        print(f"Instance: {name}\n  ❌ CPU High: {cpu:.2f}% (max in last 12hrs)")
+        issues.append({"Type": "EC2 Logger", "Name": name, "Metric": "CPU", "Status": f"High ({cpu:.2f}%)"})
+    else:
+        print(f"Instance: {name}\n  ✅ CPU OK: {cpu:.2f}% (max in last 12hrs)")
+
+    storage = check_storage(inst)
+    if storage:
+        percent, used, total = storage
+        if percent > 84:
+            print(f"  ❌ Storage High: {percent:.2f}% used ({used}/{total})")
+            issues.append({"Type": "EC2 Logger", "Name": name, "Metric": "Storage", "Status": f"High ({percent:.2f}% used {used}/{total})"})
         else:
-            print(f"Instance: {name}\n  ✅ CPU OK: {cpu:.2f}% (max in last 12hrs)")
-        storage = check_storage(inst)
-        if storage:
-            percent, used, total = storage
-            if percent > 85:
-                print(f"  ❌ Storage High: {percent:.2f}% used ({used}/{total})")
-                issues.append({"Type": "EC2 Main Mongo", "Name": name, "Metric": "Storage", "Status": f"High ({percent:.2f}% used {used}/{total})"})
-            else:
-                print(f"  ✅ Storage OK: {percent:.2f}% used ({used}/{total})")
-        else:
-            print(f"  ⚠ Storage check failed")
-            issues.append({"Type": "EC2 Main Mongo", "Name": name, "Metric": "Storage", "Status": "Check failed"})    
+            print(f"  ✅ Storage OK: {percent:.2f}% used ({used}/{total})")
+    else:
+        print(f"  ⚠ Storage check failed")
+        issues.append({"Type": "EC2 Logger", "Name": name, "Metric": "Storage", "Status": "Check failed"})
+  
     print("")
 
     print("### Main Mongo Instances (CPU + Storage) ###")
@@ -188,7 +190,7 @@ def monitor_ec2():
         storage = check_storage(inst)
         if storage:
             percent, used, total = storage
-            if percent > 85:
+            if percent > 84:
                 print(f"  ❌ Storage High: {percent:.2f}% used ({used}/{total})")
                 issues.append({"Type": "EC2 Main Mongo", "Name": name, "Metric": "Storage", "Status": f"High ({percent:.2f}% used {used}/{total})"})
             else:
