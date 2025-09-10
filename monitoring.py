@@ -178,13 +178,9 @@ def monitor_ec2():
     print("### Main Mongo Instances (CPU + Storage) ###")
     check_instances(main_mongo_instances, "EC2 Main Mongo")
 
-            print("")
+    print("")
 
-    print("### Logger Mongo Instances (CPU only) ###")
-    check_instances(logger_mongo_instances, "EC2 Logger", cpu_only=True)
-
-    print("### Main Mongo Instances (CPU + Storage) ###")
-    check_instances(main_mongo_instances, "EC2 Main Mongo", cpu_only=False)
+    
 
 # --- MQTT Nodes Monitoring via Selenium ---
 MQTT_USERNAME = "devops"
