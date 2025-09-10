@@ -43,22 +43,20 @@ def check_ec2_cpu(instance_id):
         start = utc_now - datetime.timedelta(hours=12)
 
         response = cw.get_metric_data(
-            MetricDataQueries=[
-                {
-                    "Id": "cpu_max",
-                    "MetricStat": {
-                        "Metric": {
-                            "Namespace": "AWS/EC2",
-                            "MetricName": "CPUUtilization",
-                            "Dimensions": [{"Name": "InstanceId", "Value": instance_id}],
-                        },
-                        "Period": 60,
-                        "Stat": "Maximum",
-                        "Unit": "Percent",
+            MetricDataQueries=[{
+                "Id": "cpu_max",
+                "MetricStat": {
+                    "Metric": {
+                        "Namespace": "AWS/EC2",
+                        "MetricName": "CPUUtilization",
+                        "Dimensions": [{"Name": "InstanceId", "Value": instance_id}],
                     },
-                    "ReturnData": True,
-                }
-            ],
+                    "Period": 60,
+                    "Stat": "Maximum",
+                    "Unit": "Percent",
+                },
+                "ReturnData": True,
+            }],
             StartTime=start,
             EndTime=utc_now,
             ScanBy="TimestampDescending",
@@ -147,58 +145,38 @@ def monitor_beanstalk():
 def monitor_ec2():
     print("\n--- MongoDB EC2 Monitoring ---\n")
 
-    print("### Logger Mongo Instances (CPU only) ###")
-for inst in logger_mongo_instances:
-    name = get_instance_name(inst)
-    cpu = check_ec2_cpu(inst)
-    if cpu is None:
-        print(f"Instance: {name} - ⚠ No CPU data")
-        issues.append({"Type": "EC2 Logger", "Name": name, "Metric": "CPU", "Status": "No data"})
-    elif cpu > 65:
-        print(f"Instance: {name}\n  ❌ CPU High: {cpu:.2f}% (max in last 12hrs)")
-        issues.append({"Type": "EC2 Logger", "Name": name, "Metric": "CPU", "Status": f"High ({cpu:.2f}%)"})
-    else:
-        print(f"Instance: {name}\n  ✅ CPU OK: {cpu:.2f}% (max in last 12hrs)")
+    def check_instances(instances, inst_type, cpu_only=False):
+        for inst in instances:
+            name = get_instance_name(inst)
+            cpu = check_ec2_cpu(inst)
+            if cpu is None:
+                print(f"Instance: {name} - ⚠ No CPU data")
+                issues.append({"Type": inst_type, "Name": name, "Metric": "CPU", "Status": "No data"})
+            elif cpu > 65:
+                print(f"Instance: {name}\n  ❌ CPU High: {cpu:.2f}% (max in last 12hrs)")
+                issues.append({"Type": inst_type, "Name": name, "Metric": "CPU", "Status": f"High ({cpu:.2f}%)"})
+            else:
+                print(f"Instance: {name}\n  ✅ CPU OK: {cpu:.2f}% (max in last 12hrs)")
 
-    storage = check_storage(inst)
-    if storage:
-        percent, used, total = storage
-        if percent > 84:
-            print(f"  ❌ Storage High: {percent:.2f}% used ({used}/{total})")
-            issues.append({"Type": "EC2 Logger", "Name": name, "Metric": "Storage", "Status": f"High ({percent:.2f}% used {used}/{total})"})
-        else:
-            print(f"  ✅ Storage OK: {percent:.2f}% used ({used}/{total})")
-    else:
-        print(f"  ⚠ Storage check failed")
-        issues.append({"Type": "EC2 Logger", "Name": name, "Metric": "Storage", "Status": "Check failed"})
-  
-    print("")
+            if not cpu_only:
+                storage = check_storage(inst)
+                if storage:
+                    percent, used, total = storage
+                    if percent > 84:
+                        print(f"  ❌ Storage High: {percent:.2f}% used ({used}/{total})")
+                        issues.append({"Type": inst_type, "Name": name, "Metric": "Storage", "Status": f"High ({percent:.2f}% used {used}/{total})"})
+                    else:
+                        print(f"  ✅ Storage OK: {percent:.2f}% used ({used}/{total})")
+                else:
+                    print(f"  ⚠ Storage check failed")
+                    issues.append({"Type": inst_type, "Name": name, "Metric": "Storage", "Status": "Check failed"})
+            print("")
+
+    print("### Logger Mongo Instances (CPU only) ###")
+    check_instances(logger_mongo_instances, "EC2 Logger", cpu_only=True)
 
     print("### Main Mongo Instances (CPU + Storage) ###")
-    for inst in main_mongo_instances:
-        name = get_instance_name(inst)
-        cpu = check_ec2_cpu(inst)
-        if cpu is None:
-            print(f"Instance: {name} - ⚠ No CPU data")
-            issues.append({"Type": "EC2 Main Mongo", "Name": name, "Metric": "CPU", "Status": "No data"})
-        elif cpu > 65:
-            print(f"Instance: {name}\n  ❌ CPU High: {cpu:.2f}% (max in last 12hrs)")
-            issues.append({"Type": "EC2 Main Mongo", "Name": name, "Metric": "CPU", "Status": f"High ({cpu:.2f}%)"})
-        else:
-            print(f"Instance: {name}\n  ✅ CPU OK: {cpu:.2f}% (max in last 12hrs)")
-
-        storage = check_storage(inst)
-        if storage:
-            percent, used, total = storage
-            if percent > 84:
-                print(f"  ❌ Storage High: {percent:.2f}% used ({used}/{total})")
-                issues.append({"Type": "EC2 Main Mongo", "Name": name, "Metric": "Storage", "Status": f"High ({percent:.2f}% used {used}/{total})"})
-            else:
-                print(f"  ✅ Storage OK: {percent:.2f}% used ({used}/{total})")
-        else:
-            print(f"  ⚠ Storage check failed")
-            issues.append({"Type": "EC2 Main Mongo", "Name": name, "Metric": "Storage", "Status": "Check failed"})
-    print("")
+    check_instances(main_mongo_instances, "EC2 Main Mongo", cpu_only=False)
 
 # --- MQTT Nodes Monitoring via Selenium ---
 MQTT_USERNAME = "devops"
@@ -267,7 +245,6 @@ def check_fota_time_api():
 
 # --- Print Issues Summary ---
 def print_issue_summary():
-    # Filter out MQTT Nodes
     filtered_issues = [i for i in issues if i['Type'] != "MQTT Node"]
 
     print("\n--- ⚠ Issues Summary ---\n")
@@ -287,7 +264,6 @@ def print_issue_summary():
         row = f"| {issue['Type']:<{col_widths['Type']}} | {issue['Name']:<{col_widths['Name']}} | {issue['Metric']:<{col_widths['Metric']}} | {issue['Status']:<{col_widths['Status']}} |"
         print(row)
     print(line + "\n")
-
 
 # --- Send Email ---
 def send_email(subject, body, to_email):
