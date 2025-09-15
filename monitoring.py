@@ -125,7 +125,7 @@ def monitor_beanstalk():
     issue_count = 0
     for env in envs:
         name = env["EnvironmentName"]
-        if name == "kazam-app-backend-env":  # skip suspended env
+        if name in ("kazam-app-backend-env", "Kazam-platform-replica-env"):  # skip suspended envs
             continue
         status = env["Status"]
         health = env["Health"]
