@@ -37,7 +37,7 @@ issues = []
 # --- Functions ---
 
 def check_ec2_cpu(instance_id):
-    """Get the AVG CPU utilization (%) in the last 12 hours from CloudWatch"""
+    """Get the AVG CPU utilization (%) in the last 6 hours from CloudWatch"""
     try:
         utc_now = datetime.datetime.now(pytz.UTC)
         start = utc_now - datetime.timedelta(hours=6)
