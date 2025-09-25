@@ -51,7 +51,7 @@ def check_ec2_cpu(instance_id):
                         "MetricName": "CPUUtilization",
                         "Dimensions": [{"Name": "InstanceId", "Value": instance_id}],
                     },
-                    "Period": 60,
+                    "Period": 70,
                     "Stat": "Maximum",
                     "Unit": "Percent",
                 },
