@@ -51,7 +51,7 @@ def check_ec2_cpu(instance_id):
                         "MetricName": "CPUUtilization",
                         "Dimensions": [{"Name": "InstanceId", "Value": instance_id}],
                     },
-                    "Period": 70,
+                    "Period": 60,
                     "Stat": "Maximum",
                     "Unit": "Percent",
                 },
@@ -152,7 +152,7 @@ def monitor_ec2():
             if cpu is None:
                 print(f"Instance: {name} - ⚠ No CPU data")
                 issues.append({"Type": inst_type, "Name": name, "Metric": "CPU", "Status": "No data"})
-            elif cpu > 65:
+            elif cpu > 70:
                 print(f"Instance: {name}\n  ❌ CPU High: {cpu:.2f}% (max in last 12hrs)")
                 issues.append({"Type": inst_type, "Name": name, "Metric": "CPU", "Status": f"High ({cpu:.2f}%)"})
             else:
