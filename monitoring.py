@@ -40,7 +40,7 @@ def check_ec2_cpu(instance_id):
     """Get the AVG CPU utilization (%) in the last 12 hours from CloudWatch"""
     try:
         utc_now = datetime.datetime.now(pytz.UTC)
-        start = utc_now - datetime.timedelta(hours=12)
+        start = utc_now - datetime.timedelta(hours=6)
 
         response = cw.get_metric_data(
             MetricDataQueries=[{
@@ -153,11 +153,11 @@ def monitor_ec2():
             if cpu is None:
                 print(f"Instance: {name} - ⚠ No CPU data")
                 issues.append({"Type": inst_type, "Name": name, "Metric": "CPU", "Status": "No data"})
-            elif cpu > 70:
-                print(f"Instance: {name}\n  ❌ CPU High: {cpu:.2f}% (max in last 12hrs)")
+            elif cpu > 65:
+                print(f"Instance: {name}\n  ❌ CPU High: {cpu:.2f}% (max in last 6hrs)")
                 issues.append({"Type": inst_type, "Name": name, "Metric": "CPU", "Status": f"High ({cpu:.2f}%)"})
             else:
-                print(f"Instance: {name}\n  ✅ CPU OK: {cpu:.2f}% (max in last 12hrs)")
+                print(f"Instance: {name}\n  ✅ CPU OK: {cpu:.2f}% (max in last 6hrs)")
 
             # Storage check
             storage = check_storage(inst, path=storage_path)
