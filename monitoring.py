@@ -37,22 +37,22 @@ issues = []
 # --- Functions ---
 
 def check_ec2_cpu(instance_id):
-    """Get the true MAX CPU utilization (%) in the last 12 hours from CloudWatch"""
+    """Get the AVG CPU utilization (%) in the last 12 hours from CloudWatch"""
     try:
         utc_now = datetime.datetime.now(pytz.UTC)
         start = utc_now - datetime.timedelta(hours=12)
 
         response = cw.get_metric_data(
             MetricDataQueries=[{
-                "Id": "cpu_max",
+                "Id": "cpu_avg",
                 "MetricStat": {
                     "Metric": {
                         "Namespace": "AWS/EC2",
                         "MetricName": "CPUUtilization",
                         "Dimensions": [{"Name": "InstanceId", "Value": instance_id}],
                     },
-                    "Period": 60,
-                    "Stat": "Maximum",
+                    "Period": 300,        # 5-min granularity (same as console default)
+                    "Stat": "Average",    # Average instead of Maximum
                     "Unit": "Percent",
                 },
                 "ReturnData": True,
@@ -65,10 +65,11 @@ def check_ec2_cpu(instance_id):
         results = response.get("MetricDataResults", [])
         if not results or not results[0]["Values"]:
             return None
-        return max(results[0]["Values"])
+        return max(results[0]["Values"])   # or sum(...) / len(...) if you want real avg
     except Exception as e:
         print(f"⚠ Error fetching CPU for {instance_id}: {e}")
         return None
+
 
 def check_storage(instance_id, path="/data"):
     """Check storage usage (%) via SSM for a given path"""
